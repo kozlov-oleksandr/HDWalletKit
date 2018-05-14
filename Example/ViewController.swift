@@ -10,21 +10,22 @@ import UIKit
 import HDWalletKit
 
 class ViewController: UIViewController {
-
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         
         let mnemonic = Mnemonic.create()
+        
         // nuclear you cage screen tribe trick limb smart dad voice nut jealous
         
         let seed = Mnemonic.createSeed(mnemonic: mnemonic)
         let wallet = HDWallet(seed: seed, network: .main(.bitcoin))
         
         do {
-            let privateKey = try wallet.generateExternalPrivateKey(at: 0)
-            print(privateKey.extended())
+            let extPrivateKey = try wallet.generatePrivateKey(at: [(44, true) ,(0, true), (0, true), (0,false),(0,false)])
+            print(extPrivateKey.extended())
             
-            let publicKey = privateKey.hdPublicKey()
+            let publicKey = extPrivateKey.hdPublicKey()
             print(publicKey.raw.toHexString())
             
         } catch let error {
