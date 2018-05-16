@@ -33,6 +33,43 @@
 
 @implementation Secp256k1
 
++ (NSData *) getUncompressedPubKeyWithKey:(NSData *)compr_pub_key {
+    BN_CTX *ctx = BN_CTX_new();
+    EC_KEY *key = EC_KEY_new_by_curve_name(NID_secp256k1);
+    const EC_GROUP *group = EC_KEY_get0_group(key);
+    EC_POINT *pub = EC_POINT_new(group);
+    
+    unsigned char* pub_key_in_bytes = (unsigned char*) [compr_pub_key bytes];
+    EC_POINT_oct2point(group, pub,
+                       pub_key_in_bytes, 33, ctx);
+    
+    
+    size_t buf_len=0;
+    unsigned char *buf;
+    
+    buf_len = EC_POINT_point2oct(group, pub, POINT_CONVERSION_UNCOMPRESSED,
+                                 NULL, 0, ctx);
+    if (0 == buf_len)
+        return NULL;
+    
+    if (NULL == (buf = OPENSSL_malloc(buf_len)))
+        return NULL;
+    
+    if (!EC_POINT_point2oct(group, pub, POINT_CONVERSION_UNCOMPRESSED, buf, buf_len, ctx))
+    {
+        OPENSSL_free(buf);
+        return NULL;
+    }
+    
+    
+    NSMutableData *result = [NSMutableData dataWithBytesNoCopy:buf length:buf_len];
+    
+    EC_POINT_free(pub);
+    EC_KEY_free(key);
+    BN_CTX_free(ctx);
+    return result;
+}
+
 + (NSData *)generatePublicKeyWithPrivateKey:(NSData *)privateKeyData compression:(BOOL)isCompression {
     BN_CTX *ctx = BN_CTX_new();
     EC_KEY *key = EC_KEY_new_by_curve_name(NID_secp256k1);
@@ -48,10 +85,34 @@
     
     NSMutableData *result;
     if (isCompression) {
-        EC_KEY_set_conv_form(key, POINT_CONVERSION_COMPRESSED);
-        unsigned char *bytes = NULL;
-        int length = i2o_ECPublicKey(key, &bytes);
-        result = [NSMutableData dataWithBytesNoCopy:bytes length:length];
+        //EC_KEY_set_conv_form(key, POINT_CONVERSION_COMPRESSED);
+        //unsigned char bytes[100];
+       
+        //size_t length = EC_POINT_point2oct(group, pub,
+        //                   POINT_CONVERSION_COMPRESSED,
+        //                   bytes, sizeof(bytes), ctx);
+        //result = [NSMutableData dataWithLength:length];
+        //int length = i2o_ECPublicKey(key, &bytes);
+        
+        size_t        buf_len=0;
+        unsigned char *buf;
+        
+        buf_len = EC_POINT_point2oct(group, pub, POINT_CONVERSION_COMPRESSED,
+                                     NULL, 0, ctx);
+        if (buf_len == 0)
+            return NULL;
+        
+        if ((buf = OPENSSL_malloc(buf_len)) == NULL)
+            return NULL;
+        
+        if (!EC_POINT_point2oct(group, pub, POINT_CONVERSION_COMPRESSED, buf, buf_len, ctx))
+        {
+            OPENSSL_free(buf);
+            return NULL;
+        }
+        
+        
+        result = [NSMutableData dataWithBytesNoCopy:buf length:buf_len];
     } else {
         result = [NSMutableData dataWithLength:65];
         BIGNUM *n = BN_new();
