@@ -1,3 +1,5 @@
+import CryptoSwift
+
 public struct HDPublicKey {
     public let raw: Data
     public let chainCode: Data
@@ -29,4 +31,35 @@ public struct HDPublicKey {
         let checksum = Crypto.doubleSHA256(extendedPublicKeyData).prefix(4)
         return Base58.encode(extendedPublicKeyData + checksum)
     }
+    
+    private func btc_adress() -> String {
+        var data = Data()
+        data += UInt8(0x00)
+        data += CryptoHash.ripemd160(raw.sha256())
+        data += Crypto.doubleSHA256(data).prefix(4)
+        return Base58.encode(data)
+    }
+    
+    private func eth_adress() -> String {
+        let keccak256: SHA3 = SHA3(variant: CryptoSwift.SHA3.Variant.keccak256)
+        let hash = keccak256.calculate(for: Crypto.decompressPubKey(data: self.raw).dropFirst().bytes)
+        let index = hash.toHexString().index(hash.toHexString().startIndex, offsetBy: 24)
+        let addr: String = String(hash.toHexString()[index..<hash.toHexString().endIndex])
+        return addr
+    }
+    
+    public func get() -> String {
+        return self.raw.toHexString()
+    }
+    public func address() -> String {
+        switch self.network.coinType {
+        case Network.main(.bitcoin).coinType:
+            return btc_adress()
+        case Network.main(.ethereum).coinType:
+            return eth_adress()
+        default:
+            return "None"
+        }
+    }
+    
 }
