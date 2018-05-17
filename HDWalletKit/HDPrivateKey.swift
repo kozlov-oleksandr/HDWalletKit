@@ -41,6 +41,29 @@ public struct HDPrivateKey {
         let checksum = Crypto.doubleSHA256(extendedPrivateKeyData).prefix(4)
         return Base58.encode(extendedPrivateKeyData + checksum)
     }
+    
+    public func wif() -> String {
+        if self.network.coinType == Network.main(.bitcoin).coinType {
+            var data = Data()
+            data += UInt8(0x80)
+            data += raw
+            data += UInt8(0x01)
+            data += Crypto.doubleSHA256(data).prefix(4)
+            return Base58.encode(data)
+        }
+        return "WIF is not specified"
+    }
+    
+    public func get() -> String {
+        switch self.network.coinType {
+        case Network.main(.bitcoin).coinType:
+            return self.wif()
+        case Network.main(.ethereum).coinType:
+            return self.raw.toHexString()
+        default:
+            return "None"
+        }
+    }
 
     internal func derived(at index: UInt32, hardens: Bool = false) throws -> HDPrivateKey {
         guard (0x80000000 & index) == 0 else {

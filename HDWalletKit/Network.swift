@@ -1,3 +1,8 @@
+public struct Hardens {
+    public static let HARDENED = true
+    public static let NOT_HARDENED = false
+}
+
 public enum Coin {
     case bitcoin
     case litecoin

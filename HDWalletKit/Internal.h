@@ -3,6 +3,7 @@
 NS_ASSUME_NONNULL_BEGIN
 @interface CryptoHash : NSObject
 + (NSData *)hmacsha512:(NSData *)data key:(NSData *)key;
++ (NSData *)ripemd160:(NSData *)data;
 @end
 
 @interface PKCS5 : NSObject
@@ -10,6 +11,7 @@ NS_ASSUME_NONNULL_BEGIN
 @end
 
 @interface Secp256k1 : NSObject
++ (NSData *)getUncompressedPubKeyWithKey:(NSData *)pub_key;
 + (NSData *)generatePublicKeyWithPrivateKey:(NSData *)privateKeyData compression:(BOOL)isCompression;
 @end
 
